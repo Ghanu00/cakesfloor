@@ -331,11 +331,18 @@ export const Contact: React.FC = () => {
               <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-primary shrink-0 mt-0.5">
                 <Phone size={18} />
               </div>
-              <div>
-                <h4 className="font-semibold text-[#e5e2e0] mb-1">Call Enquiries</h4>
-                <p className="leading-relaxed">
-                  <a href="tel:+917887324373" className="hover:text-primary transition-colors">+91 78873 24373</a>
-                </p>
+              <div className="space-y-1.5">
+                <h4 className="font-semibold text-[#e5e2e0]">Call Enquiries</h4>
+                <div className="space-y-1 text-xs md:text-sm font-light leading-relaxed text-[#e5e2e0]/70">
+                  <p>
+                    <span className="text-[#e5e2e0] font-medium">Bhandara Main Branch:</span>{' '}
+                    <a href="tel:+917887324373" className="hover:text-primary transition-colors">+91 78873 24373</a>
+                  </p>
+                  <p>
+                    <span className="text-[#e5e2e0] font-medium">Lakhani Branch:</span>{' '}
+                    <a href="tel:+918600629962" className="hover:text-primary transition-colors">+91 86006 29962</a>
+                  </p>
+                </div>
               </div>
             </div>
 

@@ -107,9 +107,12 @@ export const Footer: React.FC = () => {
               <MapPin size={18} className="text-primary shrink-0 mt-0.5" />
               <span>Zilla Parishad Square, Takiya Ward, Near Sai Mandir, Near, Ganeshpur, Bhandara, Maharashtra - 441904</span>
             </li>
-            <li className="flex items-center gap-3">
-              <Phone size={18} className="text-primary shrink-0" />
-              <a href="tel:+917887324373" className="hover:text-primary transition-colors">+91 78873 24373</a>
+            <li className="flex items-start gap-3">
+              <Phone size={18} className="text-primary shrink-0 mt-0.5" />
+              <div className="flex flex-col gap-1">
+                <a href="tel:+917887324373" className="hover:text-primary transition-colors">+91 78873 24373 <span className="text-xs text-[#e5e2e0]/40">(Bhandara Main)</span></a>
+                <a href="tel:+918600629962" className="hover:text-primary transition-colors">+91 86006 29962 <span className="text-xs text-[#e5e2e0]/40">(Lakhani)</span></a>
+              </div>
             </li>
             <li className="flex items-center gap-3">
               <Mail size={18} className="text-primary shrink-0" />
