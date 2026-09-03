@@ -18,14 +18,20 @@ import { TermsOfService } from './pages/TermsOfService';
 
 import './App.css'; // We will empty this file to avoid conflicts
 
-// Route listener component to snap scroll positions to the top
-
+// Route listener component to snap scroll positions to the top & track GA4 pageviews
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const location = useLocation();
 
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [pathname]);
+
+    // Track SPA pageviews in Google Analytics 4
+    if (typeof window !== 'undefined' && (window as any).gtag) {
+      (window as any).gtag('config', 'G-2576SVCCFE', {
+        page_path: location.pathname + location.search,
+      });
+    }
+  }, [location]);
 
   return null;
 };
