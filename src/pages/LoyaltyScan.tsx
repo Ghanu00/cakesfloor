@@ -18,8 +18,8 @@ import { supabase } from '../lib/supabase';
 
 const STAFF_PIN = '1201';
 
-// Direct Google Maps review link that opens Google Maps review search on any phone/PC
-const GOOGLE_REVIEW_URL = 'https://www.google.com/maps/search/?api=1&query=The+Cakes+Floor+Zilla+Parishad+Square+Bhandara';
+// Direct Google Maps review writing dialog URL for The Cakes Floor (Bhandara Main Branch)
+const GOOGLE_REVIEW_URL = 'https://search.google.com/local/writereview?placeid=ChIJ45vTPpo5KzoRak6ZRefnnzs';
 
 export const LoyaltyScan: React.FC = () => {
   // State for Customer
