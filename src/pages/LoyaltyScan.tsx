@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { 
   Gift, 
@@ -18,7 +17,9 @@ import {
 import { supabase } from '../lib/supabase';
 
 const STAFF_PIN = '1201';
-const GOOGLE_REVIEW_URL = 'https://search.google.com/local/writereview?placeid=ChIJ05423-741DsR8u6U5Wp1234'; // Replace with exact G-Maps link
+
+// Direct Google Maps review link that opens Google Maps review search on any phone/PC
+const GOOGLE_REVIEW_URL = 'https://www.google.com/maps/search/?api=1&query=The+Cakes+Floor+Zilla+Parishad+Square+Bhandara';
 
 export const LoyaltyScan: React.FC = () => {
   // State for Customer
@@ -65,7 +66,6 @@ export const LoyaltyScan: React.FC = () => {
   const fetchCustomerData = async (phone: string, _name: string) => {
     setIsLoading(true);
     try {
-      // 1. Try Supabase lookup
       const { data: customer, error: custErr } = await supabase
         .from('customers')
         .select('id, name, phone')
@@ -77,7 +77,6 @@ export const LoyaltyScan: React.FC = () => {
       }
 
       if (customer) {
-        // Fetch loyalty card
         const { data: card } = await supabase
           .from('loyalty_cards')
           .select('current_stamps, total_rewards_earned, review_prompted')
@@ -89,7 +88,6 @@ export const LoyaltyScan: React.FC = () => {
           setTotalRewards(card.total_rewards_earned);
         }
       } else {
-        // Fallback to local storage state
         const localStamps = parseInt(localStorage.getItem(`cakes_stamps_${phone}`) || '1', 10);
         const localRewards = parseInt(localStorage.getItem(`cakes_rewards_${phone}`) || '0', 10);
         setCurrentStamps(localStamps);
@@ -124,7 +122,6 @@ export const LoyaltyScan: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Save locally
       localStorage.setItem('cakes_floor_phone', cleanPhone);
       localStorage.setItem('cakes_floor_name', cleanName);
       localStorage.setItem(`cakes_stamps_${cleanPhone}`, '1');
@@ -136,7 +133,6 @@ export const LoyaltyScan: React.FC = () => {
       setTotalRewards(0);
       setIsRegistered(true);
 
-      // Save to Supabase in background
       const { data: newCustomer } = await supabase
         .from('customers')
         .insert([{ name: cleanName, phone: cleanPhone }])
@@ -153,7 +149,6 @@ export const LoyaltyScan: React.FC = () => {
           .insert([{ customer_id: newCustomer.id, stamps_added: 1, staff_pin_used: 'REGISTER_WELCOME' }]);
       }
 
-      // Celebrate Welcome Stamp!
       confetti({
         particleCount: 80,
         spread: 70,
@@ -171,7 +166,6 @@ export const LoyaltyScan: React.FC = () => {
   const handleVerifyPin = async () => {
     setPinError('');
 
-    // Check Lockout
     if (lockoutUntil && Date.now() < lockoutUntil) {
       const secondsLeft = Math.ceil((lockoutUntil - Date.now()) / 1000);
       setPinError(`Too many attempts! Please wait ${secondsLeft}s`);
@@ -182,7 +176,7 @@ export const LoyaltyScan: React.FC = () => {
       const newCount = failedPinCount + 1;
       setFailedPinCount(newCount);
       if (newCount >= 3) {
-        setLockoutUntil(Date.now() + 5 * 60 * 1000); // 5 min lockout
+        setLockoutUntil(Date.now() + 5 * 60 * 1000);
         setPinError('Locked for 5 minutes due to 3 wrong PIN attempts.');
       } else {
         setPinError(`Incorrect Cashier PIN. ${3 - newCount} attempt(s) remaining.`);
@@ -190,20 +184,16 @@ export const LoyaltyScan: React.FC = () => {
       return;
     }
 
-    // Reset Failed PIN attempts
     setFailedPinCount(0);
 
-    // Calculate new stamps
     let newStamps = currentStamps + selectedStampQty;
-
     if (newStamps >= 4) {
-      newStamps = 4; // Cap at 4 for reward unlock
+      newStamps = 4;
     }
 
     setCurrentStamps(newStamps);
     localStorage.setItem(`cakes_stamps_${customerPhone}`, newStamps.toString());
 
-    // Update Supabase
     try {
       const { data: cust } = await supabase
         .from('customers')
@@ -225,20 +215,16 @@ export const LoyaltyScan: React.FC = () => {
       console.log('Updated stamp locally');
     }
 
-    // Close PIN Modal
     setIsPinModalOpen(false);
     setEnteredPin('');
     setSelectedStampQty(1);
 
-    // Fire Celebration Confetti
     confetti({
       particleCount: 100,
       spread: 80,
       origin: { y: 0.5 }
     });
 
-    // Check triggers:
-    // If reached 3 stamps and haven't prompted review yet
     if (newStamps === 3 && !localStorage.getItem(`review_shown_${customerPhone}`)) {
       setTimeout(() => {
         setShowReviewModal(true);
@@ -246,7 +232,6 @@ export const LoyaltyScan: React.FC = () => {
       }, 800);
     }
 
-    // If reached 4 stamps -> Show Reward Unlock Modal
     if (newStamps >= 4) {
       setTimeout(() => {
         setShowRewardModal(true);
@@ -254,16 +239,15 @@ export const LoyaltyScan: React.FC = () => {
     }
   };
 
-  // Handle Reward Redemption (Cashier enters PIN to reset card to 0/4)
+  // Handle Reward Redemption
   const handleRedeemReward = async () => {
     const newRewardsCount = totalRewards + 1;
     setTotalRewards(newRewardsCount);
-    setCurrentStamps(0); // Reset to 0
+    setCurrentStamps(0);
 
     localStorage.setItem(`cakes_stamps_${customerPhone}`, '0');
     localStorage.setItem(`cakes_rewards_${customerPhone}`, newRewardsCount.toString());
 
-    // Update Supabase
     try {
       const { data: cust } = await supabase
         .from('customers')
@@ -296,13 +280,11 @@ export const LoyaltyScan: React.FC = () => {
 
   return (
     <>
-      {/* 1. SEO Search Engine Blocking */}
       <Helmet>
         <title>Loyalty Rewards | The Cakes Floor</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
 
-      {/* 2. Light Theme Funky Gradient Wrapper */}
       <div className="min-h-screen bg-gradient-to-b from-amber-50 via-pink-50 to-rose-100 font-sans text-gray-800 pb-16 pt-6 px-4 selection:bg-pink-200">
         <div className="max-w-md mx-auto">
 
@@ -327,7 +309,7 @@ export const LoyaltyScan: React.FC = () => {
             </div>
           )}
 
-          {/* 3. FIRST TIME REGISTRATION FORM */}
+          {/* FIRST TIME REGISTRATION FORM */}
           {!isLoading && !isRegistered && (
             <div className="bg-white/90 backdrop-blur-md rounded-3xl p-6 shadow-2xl border-2 border-pink-200 transition-all">
               <div className="text-center mb-5">
@@ -391,7 +373,7 @@ export const LoyaltyScan: React.FC = () => {
             </div>
           )}
 
-          {/* 4. ACTIVE LOYALTY CARD VIEW */}
+          {/* ACTIVE LOYALTY CARD VIEW */}
           {!isLoading && isRegistered && (
             <div className="space-y-6">
 
@@ -412,7 +394,7 @@ export const LoyaltyScan: React.FC = () => {
               {/* The Main 4-Stamp Card */}
               <div className="bg-white/95 backdrop-blur-xl rounded-3xl p-6 shadow-2xl border-4 border-amber-300 relative overflow-hidden">
 
-                {/* Glowing Card Header */}
+                {/* Card Header */}
                 <div className="text-center mb-6">
                   <span className="inline-block px-4 py-1 bg-amber-100 text-amber-900 text-xs font-extrabold uppercase rounded-full mb-1 tracking-wider shadow-sm">
                     🧁 Pastry Loyalty Card
@@ -442,14 +424,12 @@ export const LoyaltyScan: React.FC = () => {
                             : 'bg-gray-50 border-dashed border-pink-200 text-gray-400'
                         }`}
                       >
-                        {/* Slot Badge */}
                         <span className={`absolute top-2 left-2 text-[10px] font-black px-2 py-0.5 rounded-full ${
                           isStamped ? 'bg-white/30 text-white' : 'bg-gray-200 text-gray-600'
                         }`}>
                           #{slotNum}
                         </span>
 
-                        {/* Stamp Icon / Content */}
                         {isStamped ? (
                           <div className="text-center animate-pulse">
                             <span className="text-3xl block">🧁</span>
@@ -487,7 +467,7 @@ export const LoyaltyScan: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Action Button: Add Stamp OR Redeem Reward */}
+                {/* Action Button */}
                 {currentStamps < 4 ? (
                   <button
                     onClick={() => setIsPinModalOpen(true)}
@@ -515,13 +495,13 @@ export const LoyaltyScan: React.FC = () => {
 
               </div>
 
-              {/* 5. BOTTOM ACTION LINKS (Replacing Linktree) */}
+              {/* BOTTOM ACTION LINKS (Opening in New Tab for Menu & Website) */}
               <div className="bg-white/80 backdrop-blur-md rounded-3xl p-5 shadow-lg border border-pink-200 space-y-3">
                 <h4 className="text-xs font-extrabold uppercase text-gray-700 tracking-wider text-center mb-2">
                   Quick Actions
                 </h4>
 
-                {/* Google Review Button */}
+                {/* Google Review Button (Opens in New Tab) */}
                 <a
                   href={GOOGLE_REVIEW_URL}
                   target="_blank"
@@ -540,9 +520,11 @@ export const LoyaltyScan: React.FC = () => {
                   <ChevronRight className="w-5 h-5 text-amber-600 group-hover:translate-x-1 transition-transform" />
                 </a>
 
-                {/* Digital Menu Link */}
-                <Link
-                  to="/menu"
+                {/* Digital Menu Link (Opens in New Tab) */}
+                <a
+                  href="/menu"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-between p-3.5 bg-rose-50 hover:bg-rose-100/80 rounded-2xl border border-rose-200 transition-all font-bold text-rose-900 text-sm group"
                 >
                   <div className="flex items-center gap-3">
@@ -555,11 +537,13 @@ export const LoyaltyScan: React.FC = () => {
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-rose-600 group-hover:translate-x-1 transition-transform" />
-                </Link>
+                </a>
 
-                {/* Main Website Link */}
-                <Link
-                  to="/"
+                {/* Main Website Link (Opens in New Tab) */}
+                <a
+                  href="/"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex items-center justify-between p-3.5 bg-purple-50 hover:bg-purple-100/80 rounded-2xl border border-purple-200 transition-all font-bold text-purple-900 text-sm group"
                 >
                   <div className="flex items-center gap-3">
@@ -572,7 +556,7 @@ export const LoyaltyScan: React.FC = () => {
                     </div>
                   </div>
                   <ChevronRight className="w-5 h-5 text-purple-600 group-hover:translate-x-1 transition-transform" />
-                </Link>
+                </a>
 
                 {/* Call Bakery Link */}
                 <a
@@ -599,9 +583,7 @@ export const LoyaltyScan: React.FC = () => {
         </div>
       </div>
 
-      {/* ======================================================== */}
       {/* MODAL 1: CASHIER PIN VERIFICATION MODAL */}
-      {/* ======================================================== */}
       {isPinModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-4 border-amber-300 relative animate-in fade-in zoom-in duration-200">
@@ -678,13 +660,10 @@ export const LoyaltyScan: React.FC = () => {
         </div>
       )}
 
-      {/* ======================================================== */}
-      {/* MODAL 2: 3rd STAMP GOOGLE REVIEW POPUP */}
-      {/* ======================================================== */}
+      {/* MODAL 2: 3rd STAMP GOOGLE REVIEW POPUP (Opens in New Tab) */}
       {showReviewModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border-4 border-pink-300 relative text-center">
-            {/* Top Right X Button */}
             <button
               onClick={() => setShowReviewModal(false)}
               className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 rounded-full bg-gray-100"
@@ -726,9 +705,7 @@ export const LoyaltyScan: React.FC = () => {
         </div>
       )}
 
-      {/* ======================================================== */}
       {/* MODAL 3: 4th STAMP REWARD UNLOCKED MODAL */}
-      {/* ======================================================== */}
       {showRewardModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-4">
           <div className="bg-gradient-to-b from-amber-100 via-white to-pink-50 rounded-3xl max-w-sm w-full p-6 shadow-2xl border-4 border-amber-400 relative text-center">
